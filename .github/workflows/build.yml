@@ -1,0 +1,38 @@
+name: Build Custom OS
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential gcc g++ binutils patch libncurses-dev rsync bc git cpio unzip file wget libssl-dev
+
+      - name: Clone Buildroot
+        run: |
+          git clone https://git.buildroot.net/buildroot --depth 1 ~/buildroot
+
+      - name: Inject Config
+        run: |
+          cp my_os.config ~/buildroot/.config
+
+      - name: Build OS
+        run: |
+          cd ~/buildroot
+          make olddefconfig
+          make -j$(nproc)
+
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: os-images
+          path: ~/buildroot/output/images/
