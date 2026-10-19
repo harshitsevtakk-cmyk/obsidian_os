@@ -1,0 +1,22 @@
+[PlankDockPreferences]
+# macOS Theme and Alignment
+Theme=Transparent
+Position=Bottom
+Alignment=Center
+Offset=0
+
+# macOS Magnification & Size
+IconSize=48
+ZoomEnabled=true
+ZoomPercent=150
+
+# Autohide and Behavior
+HideMode=0
+UnhideDelay=0
+HideDelay=0
+
+# macOS Frosted Glass Dock Appearance
+ItemPadding=6
+LockItems=false
+ShowDockItem=false
+CurrentItemBackground=true
