@@ -1,0 +1,5 @@
+# Launch Picom with our macOS animations and blur config
+picom --config /etc/xdg/picom.conf -b &
+
+# Launch Plank Dock
+plank &
