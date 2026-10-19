@@ -1,38 +1,45 @@
-name: Build Custom OS
+name: Build Shum OS
 
 on:
   push:
-    branches: [ main ]
+    branches: [ main, master ]
   workflow_dispatch:
 
 jobs:
-  build:
+  build-os:
     runs-on: ubuntu-latest
+
     steps:
-      - name: Checkout repository
+      - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Install Dependencies
+      - name: Install Buildroot Dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y build-essential gcc g++ binutils patch libncurses-dev rsync bc git cpio unzip file wget libssl-dev
+          sudo apt-get install -y \
+            build-essential libncurses-dev bison flex libssl-dev \
+            bc rsync gawk wget git unzip libelf-dev python3 python3-pip
 
-      - name: Clone Buildroot
+      - name: Download Buildroot
         run: |
-          git clone https://git.buildroot.net/buildroot --depth 1 ~/buildroot
+          wget https://buildroot.org/downloads/buildroot-2024.02.1.tar.gz
+          tar -xzf buildroot-2024.02.1.tar.gz
+          mv buildroot-2024.02.1 buildroot
 
-      - name: Inject Config
+      - name: Copy Config & Board Customizations
         run: |
-          cp my_os.config ~/buildroot/.config
+          cp my_os.config buildroot/.config
+          mkdir -p buildroot/board/custom_os
+          cp -r board/custom_os/* buildroot/board/custom_os/
 
-      - name: Build OS
+      - name: Compile Shum OS Image
+        working-directory: ./buildroot
         run: |
-          cd ~/buildroot
           make olddefconfig
           make -j$(nproc)
 
-      - name: Upload Artifacts
+      - name: Upload Finished OS Image
         uses: actions/upload-artifact@v4
         with:
-          name: os-images
-          path: ~/buildroot/output/images/
+          name: Shum-OS-x86_64-Image
+          path: buildroot/output/images/
