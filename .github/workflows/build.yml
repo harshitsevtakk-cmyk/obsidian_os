@@ -3,12 +3,13 @@ name: Build Shum OS
 on:
   push:
     branches: [ main, master ]
-  workflow_dispatch:
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch: # Allows you to trigger builds manually from GitHub
 
 jobs:
-  build-os:
+  build-shum-os:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
@@ -17,29 +18,51 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y \
-            build-essential libncurses-dev bison flex libssl-dev \
-            bc rsync gawk wget git unzip libelf-dev python3 python3-pip
+            build-essential \
+            libncurses5-dev \
+            libssl-dev \
+            bc \
+            rsync \
+            unzip \
+            wget \
+            cpio \
+            python3 \
+            file \
+            git
 
-      - name: Download Buildroot
-        run: |
-          wget https://buildroot.org/downloads/buildroot-2024.02.1.tar.gz
-          tar -xzf buildroot-2024.02.1.tar.gz
-          mv buildroot-2024.02.1 buildroot
+      - name: Setup Buildroot Ccache & Download Cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            dl
+            /home/runner/.buildroot-ccache
+          key: buildroot-${{ runner.os }}-${{ hashFiles('my_os.config') }}
+          restore-keys: |
+            buildroot-${{ runner.os }}-
 
-      - name: Copy Config & Board Customizations
+      - name: Configure Ccache Environment
         run: |
+          mkdir -p /home/runner/.buildroot-ccache
+          export CCACHE_DIR="/home/runner/.buildroot-ccache"
+          ccache -M 2G || true
+
+      - name: Initialize and Build Shum OS
+        run: |
+          # If using an external Buildroot tree, or cloning Buildroot directly:
+          if [ ! -d "buildroot" ]; then
+            git clone --depth 1 --branch 2024.02.x https://github.com/buildroot/buildroot.git
+          fi
+          
+          # Copy your custom config into buildroot
           cp my_os.config buildroot/.config
-          mkdir -p buildroot/board/custom_os
-          cp -r board/custom_os/* buildroot/board/custom_os/
-
-      - name: Compile Shum OS Image
-        working-directory: ./buildroot
-        run: |
+          
+          # Run the build
+          cd buildroot
           make olddefconfig
-          make -j$(nproc)
-
-      - name: Upload Finished OS Image
+          make
+          
+      - name: Locate and Upload ISO Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: Shum-OS-x86_64-Image
-          path: buildroot/output/images/
+          name: ShumOS-ISO
+          path: buildroot/output/images/*.iso
