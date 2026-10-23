@@ -3,9 +3,7 @@ name: Build Shum OS
 on:
   push:
     branches: [ main, master ]
-  pull_request:
-    branches: [ main, master ]
-  workflow_dispatch: # Allows you to trigger builds manually from GitHub
+  workflow_dispatch:
 
 jobs:
   build-shum-os:
@@ -17,18 +15,7 @@ jobs:
       - name: Install Buildroot Dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y \
-            build-essential \
-            libncurses5-dev \
-            libssl-dev \
-            bc \
-            rsync \
-            unzip \
-            wget \
-            cpio \
-            python3 \
-            file \
-            git
+          sudo apt-get install -y build-essential libncurses5-dev libssl-dev bc rsync unzip wget cpio python3 file git
 
       - name: Setup Buildroot Ccache & Download Cache
         uses: actions/cache@v4
@@ -40,29 +27,24 @@ jobs:
           restore-keys: |
             buildroot-${{ runner.os }}-
 
-      - name: Configure Ccache Environment
+      - name: Configure Ccache
         run: |
           mkdir -p /home/runner/.buildroot-ccache
           export CCACHE_DIR="/home/runner/.buildroot-ccache"
           ccache -M 2G || true
 
-      - name: Initialize and Build Shum OS
+      - name: Build Shum OS Image
         run: |
-          # If using an external Buildroot tree, or cloning Buildroot directly:
           if [ ! -d "buildroot" ]; then
             git clone --depth 1 --branch 2024.02.x https://github.com/buildroot/buildroot.git
           fi
-          
-          # Copy your custom config into buildroot
           cp my_os.config buildroot/.config
-          
-          # Run the build
           cd buildroot
           make olddefconfig
           make
-          
-      - name: Locate and Upload ISO Artifact
+
+      - name: Upload Single ShumOS Installer ISO
         uses: actions/upload-artifact@v4
         with:
-          name: ShumOS-ISO
-          path: buildroot/output/images/*.iso
+          name: ShumOS-Installer-ISO
+          path: buildroot/output/images/rootfs.iso9660
