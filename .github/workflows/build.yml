@@ -42,6 +42,11 @@ jobs:
           export CCACHE_DIR="/home/runner/.buildroot-ccache"
           ccache -M 2G || true
 
+      - name: Make scripts executable
+        run: |
+          chmod +x rootfs_overlay/etc/init.d/S99installer
+          chmod +x rootfs_overlay/usr/bin/shum-installer
+
       - name: Build Shum OS Image
         run: |
           if [ ! -d "buildroot" ]; then
