@@ -44,18 +44,22 @@ jobs:
 
       - name: Make scripts executable
         run: |
-          chmod +x rootfs_overlay/etc/init.d/S99installer
-          chmod +x rootfs_overlay/usr/bin/shum-installer
+          chmod +x rootfs_overlay/etc/init.d/S99installer || true
+          chmod +x rootfs_overlay/usr/bin/shum-installer || true
 
       - name: Build Shum OS Image (Parallel)
         run: |
           if [ ! -d "buildroot" ]; then
             git clone --depth 1 --branch 2024.02.x https://github.com/buildroot/buildroot.git
           fi
+          
+          # Copy board configuration and rootfs overlay inside buildroot
+          cp -r board buildroot/
+          cp -r rootfs_overlay buildroot/
+          
           cp my_os.config buildroot/.config
           cd buildroot
           make olddefconfig
-          # Use all available CPU cores on the runner to speed up compilation
           make -j$(nproc)
 
       - name: Upload Single ShumOS Installer ISO
